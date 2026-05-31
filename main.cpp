@@ -27,4 +27,5 @@ int main()
     cout << "Введённое число m: " << m << endl;
     cout << "Найденное число d: " << x << endl;
     cout << "Проверка условия c * d mod m = 1: " << (c * x) % m << endl;
+    return 0;
 }
