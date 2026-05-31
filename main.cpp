@@ -1,8 +1,8 @@
 #include <iostream>
-
+#include <iomanip>
 using namespace std;
 
-int gcdExtended(int a, int b, int& x, int& y)
+void gcdExtended(int a, int b, int& x, int& y, int& d)
 {
     // Блок У
     int x1 = a;
@@ -12,16 +12,25 @@ int gcdExtended(int a, int b, int& x, int& y)
     int y1 = b;
     int y2 = 0;
     int y3 = 1;
+
+    cout << "|" << setw(7) << "Q" << "|" << setw(7) << "x" << "|" << setw(7) 
+         << "y" << "|" << setw(7) << "d" << "|" << setw(7) << "b" << "|" << endl;
+
+    cout << string(41, '-') << endl;
+
     while (y1 != 0)
     {
         int Q = x1 / y1;
 
-        int t1 = Q;
+        int t1 = x1 % y1;
         int t2 = x2 - Q * y2;
         int t3 = x3 - Q * y3;
         
+        cout << "|" << setw(7) << Q << "|" << setw(7) << t2 << "|" << setw(7) << t3  
+             << "|" << setw(7) << x1 << "|" << setw(7) << y1 << "|" << endl;
+
         x1 = y1;
-        x2 = y3;
+        x2 = y2;
         x3 = y3;
         y1 = t1;
         y2 = t2;
@@ -29,7 +38,7 @@ int gcdExtended(int a, int b, int& x, int& y)
     }
     x = x2;
     y = x3;
-    return x1;
+    cout << "НОД(" << a << "," << b << "): " << x1 << endl;
 }
 
 int main()
@@ -52,4 +61,10 @@ int main()
         cin.ignore(1000, '\n');
         cout << "Введите число c: ";
     }
+    int x, y, d;
+    gcdExtended(m, c, x, y, d);
+    cout << "Введённое число c: " << c << endl;
+    cout << "Введённое число m: " << m << endl;
+    cout << "Найденное число d: " << x << endl;
+    cout << "Проверка условия c * d mod m = 1: " << (c * x) % m << endl;
 }
