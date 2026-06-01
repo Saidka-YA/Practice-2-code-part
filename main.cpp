@@ -3,15 +3,6 @@ using namespace std;
 
 int main()
 {
-    cout << "Введите число m: ";
-    int m;
-    while (!(cin >> m))
-    {
-        cerr << "Ошибка: введите число!\n";
-        cin.clear();
-        cin.ignore(1000, '\n');
-        cout << "Введите число m: ";
-    }
     cout << "Введите число c: ";
     int c;
     while (!(cin >> c))
@@ -19,12 +10,19 @@ int main()
         cerr << "Ошибка: введите число!\n";
         cin.clear();
         cin.ignore(1000, '\n');
-        cout << "Введите число c: ";
+    }
+    cout << "Введите число m: ";
+    int m;
+    while (!(cin >> m))
+    {
+        cerr << "Ошибка: введите число!\n";
+        cin.clear();
+        cin.ignore(1000, '\n');
     }
     int x, y, d;
-    gcdExtended(m, c, x, y, d);
-    cout << "Введённое число c: " << c << endl;
+    gcdExtended(c, m, x, y, d);
+    cout << "Введёное число с: " << c << endl;
     cout << "Введённое число m: " << m << endl;
-    cout << "Найденное число d: " << x << endl;
-    cout << "Проверка условия c * d mod m = 1: " << (c * x) % m << endl;
+    cout << "Найденный обратный элемент: " << x << endl;
+    cout << "Проверка условия c^-1 mod m = d: " << y % m << endl;;
 }
