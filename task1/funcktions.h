@@ -1,5 +1,6 @@
 #ifndef FUNCKTIONS_H
 #define FUNCKTIONS_H
+#pragma once
 #include <cstdlib>
 
 bool isPrime(uint n);
