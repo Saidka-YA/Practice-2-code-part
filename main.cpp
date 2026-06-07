@@ -32,7 +32,7 @@ int main()
     gcdExtended(m, c, x, y, d);
 
     // вывод исходных данных
-    cout << "Введённое число c: " << c << endl;S
+    cout << "Введённое число c: " << c << endl;
     cout << "Введённое число m: " << m << endl;
     if (d != 1)
     {
