@@ -6,6 +6,59 @@
 
 using namespace std;
 
+// Функция модульного возведения в степень
+// result = base^exp mod mod
+void modPow(mpz_t result, const mpz_t base, const mpz_t exp, const mpz_t mod)
+{
+    mpz_powm(result, base, exp, mod);
+}
+
+// Функция поиска примитивного корня (генератора)
+void findGenerator(mpz_t g, const mpz_t p)
+{
+    gmp_randstate_t state;
+    gmp_randinit_default(state);
+    
+    random_device rd;
+    gmp_randseed_ui(state, rd());
+    
+    mpz_t temp, p_minus_1, half;
+    mpz_init(temp);
+    mpz_init(p_minus_1);
+    mpz_init(half);
+    
+    mpz_sub_ui(p_minus_1, p, 1);
+    mpz_div_ui(half, p_minus_1, 2);
+    
+    // Ищем подходящий генератор
+    for(int attempt = 0; attempt < 100; attempt++)
+    {
+        mpz_urandomm(g, state, p_minus_1);
+        if(mpz_cmp_ui(g, 2) < 0) continue;
+        
+        // Проверяем что g^2 != 1 и g^((p-1)/2) != 1
+        mpz_powm_ui(temp, g, 2, p);
+        if(mpz_cmp_ui(temp, 1) == 0) continue;
+        
+        mpz_powm(temp, g, half, p);
+        if(mpz_cmp_ui(temp, 1) == 0) continue;
+        
+        mpz_clear(temp);
+        mpz_clear(p_minus_1);
+        mpz_clear(half);
+        gmp_randclear(state);
+        return;
+    }
+    
+    // Запасной вариант
+    mpz_set_ui(g, 2);
+    
+    mpz_clear(temp);
+    mpz_clear(p_minus_1);
+    mpz_clear(half);
+    gmp_randclear(state);
+}
+
 // Функция генерации простого числа
 void generatePrime(mpz_t prime, int bits)
 {
