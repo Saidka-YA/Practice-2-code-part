@@ -1,7 +1,4 @@
-#include <vector>
-#include <random>
-#include <gmp.h>
-
+#include "ElGamalUtilities.h"
 using namespace std;
 
 // Функция шифрования блока

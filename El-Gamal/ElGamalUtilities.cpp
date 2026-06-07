@@ -1,9 +1,4 @@
-#include <fstream>
-#include <random>
-#include <sstream>
-#include <iomanip>
-#include <gmp.h>
-
+#include "ElGamalUtilities.h"
 using namespace std;
 
 // Функция модульного возведения в степень
@@ -22,18 +17,18 @@ void findGenerator(mpz_t g, const mpz_t p)
     random_device rd;
     gmp_randseed_ui(state, rd());
     
-    mpz_t temp, p_minus_1, half;
+    mpz_t temp, pMinus1, half;
     mpz_init(temp);
-    mpz_init(p_minus_1);
+    mpz_init(pMinus1);
     mpz_init(half);
     
-    mpz_sub_ui(p_minus_1, p, 1);
-    mpz_div_ui(half, p_minus_1, 2);
+    mpz_sub_ui(pMinus1, p, 1);
+    mpz_div_ui(half, pMinus1, 2);
     
     // Ищем подходящий генератор
     for(int attempt = 0; attempt < 100; attempt++)
     {
-        mpz_urandomm(g, state, p_minus_1);
+        mpz_urandomm(g, state, pMinus1);
         if(mpz_cmp_ui(g, 2) < 0) continue;
         
         // Проверяем что g^2 != 1 и g^((p-1)/2) != 1
@@ -44,7 +39,7 @@ void findGenerator(mpz_t g, const mpz_t p)
         if(mpz_cmp_ui(temp, 1) == 0) continue;
         
         mpz_clear(temp);
-        mpz_clear(p_minus_1);
+        mpz_clear(pMinus1);
         mpz_clear(half);
         gmp_randclear(state);
         return;
@@ -54,7 +49,7 @@ void findGenerator(mpz_t g, const mpz_t p)
     mpz_set_ui(g, 2);
     
     mpz_clear(temp);
-    mpz_clear(p_minus_1);
+    mpz_clear(pMinus1);
     mpz_clear(half);
     gmp_randclear(state);
 }
@@ -148,4 +143,120 @@ string hexDisplay(const vector<uint8_t>& data)
         if (i + 1 < data.size()) oss << " ";
     }
     return oss.str(); // Возвращаем полученную строку из потока
+}
+
+// Функция генерации ключей
+// Параметры: p, g, y - открытый ключ, x - закрытый ключ
+void generateKeys(mpz_t p, mpz_t g, mpz_t y, mpz_t x)
+{
+    // Генерируем простое число p (1024 бита для криптостойкости)
+    generatePrime(p, 1024);
+    
+    // Находим генератор g
+    findGenerator(g, p);
+    
+    // Генерируем секретный ключ x
+    gmp_randstate_t state;
+    gmp_randinit_default(state);
+    random_device gen;
+    gmp_randseed_ui(state, gen());
+    
+    mpz_t pMinus2;
+    mpz_init(pMinus2);
+    mpz_sub_ui(pMinus2, p, 2);
+    
+    mpz_urandomm(x, state, pMinus2);
+    mpz_add_ui(x, x, 2);
+    
+    mpz_clear(pMinus2);
+    
+    // Вычисляем открытый ключ y = g^x mod p
+    modPow(y, g, x, p);
+    
+    gmp_randclear(state);
+}
+
+// Запись ключей в файл
+bool saveKey(const string& path, const mpz_t p, const mpz_t g, const mpz_t y, const mpz_t x)
+{
+    // Открыть файл как бинарник
+    ofstream file(path, ios::binary);
+    // Проверка открытия
+    if (!file) return false;
+    
+    // Сохраняем каждое число
+    // Формат: размер (4 байта) + данные
+    
+    // Сохраняем p
+    size_t pSize = (mpz_sizeinbase(p, 2) + 7) / 8;
+    file.write(reinterpret_cast<const char*>(&pSize), sizeof(size_t));
+    vector<uint8_t> pBytes(pSize);
+    mpz_export(&pBytes[0], NULL, 1, sizeof(uint8_t), 0, 0, p);
+    file.write(reinterpret_cast<const char*>(&pBytes[0]), pSize);
+    
+    // Сохраняем g
+    size_t gSize = (mpz_sizeinbase(g, 2) + 7) / 8;
+    file.write(reinterpret_cast<const char*>(&gSize), sizeof(size_t));
+    vector<uint8_t> gBytes(gSize);
+    mpz_export(&gBytes[0], NULL, 1, sizeof(uint8_t), 0, 0, g);
+    file.write(reinterpret_cast<const char*>(&gBytes[0]), gSize);
+    
+    // Сохраняем y
+    size_t ySize = (mpz_sizeinbase(y, 2) + 7) / 8;
+    file.write(reinterpret_cast<const char*>(&ySize), sizeof(size_t));
+    vector<uint8_t> yBytes(ySize);
+    mpz_export(&yBytes[0], NULL, 1, sizeof(uint8_t), 0, 0, y);
+    file.write(reinterpret_cast<const char*>(&yBytes[0]), ySize);
+    
+    // Сохраняем x
+    size_t xSize = (mpz_sizeinbase(x, 2) + 7) / 8;
+    file.write(reinterpret_cast<const char*>(&xSize), sizeof(size_t));
+    vector<uint8_t> xBytes(xSize);
+    mpz_export(&xBytes[0], NULL, 1, sizeof(uint8_t), 0, 0, x);
+    file.write(reinterpret_cast<const char*>(&xBytes[0]), xSize);
+    
+    // Закрытие файла
+    file.close();
+    return true;
+}
+
+// Загружаем ключи из файла
+bool loadKey(const string& path, mpz_t p, mpz_t g, mpz_t y, mpz_t x)
+{
+    // Открываем файл как бинарник
+    ifstream file(path, ios::binary);
+    // Проверка открытия
+    if (!file) return false;
+    
+    // Загружаем p
+    size_t pSize;
+    file.read(reinterpret_cast<char*>(&pSize), sizeof(size_t));
+    vector<uint8_t> pBytes(pSize);
+    file.read(reinterpret_cast<char*>(&pBytes[0]), pSize);
+    mpz_import(p, pSize, 1, sizeof(uint8_t), 0, 0, &pBytes[0]);
+    
+    // Загружаем g
+    size_t gSize;
+    file.read(reinterpret_cast<char*>(&gSize), sizeof(size_t));
+    vector<uint8_t> gBytes(gSize);
+    file.read(reinterpret_cast<char*>(&gBytes[0]), gSize);
+    mpz_import(g, gSize, 1, sizeof(uint8_t), 0, 0, &gBytes[0]);
+    
+    // Загружаем y
+    size_t ySize;
+    file.read(reinterpret_cast<char*>(&ySize), sizeof(size_t));
+    vector<uint8_t> yBytes(ySize);
+    file.read(reinterpret_cast<char*>(&yBytes[0]), ySize);
+    mpz_import(y, ySize, 1, sizeof(uint8_t), 0, 0, &yBytes[0]);
+    
+    // Загружаем x
+    size_t xSize;
+    file.read(reinterpret_cast<char*>(&xSize), sizeof(size_t));
+    vector<uint8_t> xBytes(xSize);
+    file.read(reinterpret_cast<char*>(&xBytes[0]), xSize);
+    mpz_import(x, xSize, 1, sizeof(uint8_t), 0, 0, &xBytes[0]);
+    
+    // Закрываем файл
+    file.close();
+    return true;
 }
