@@ -8,7 +8,8 @@
 #include <iomanip>
 #include <cstring>
 #include <gmp.h>
-
+#include "ElGamalblock.h"
+#include "ElGamalUtilities.h"
 using namespace std;
 
 int main()
