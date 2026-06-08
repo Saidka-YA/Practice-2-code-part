@@ -166,15 +166,16 @@ void decryptData(const vector<uint8_t>& ciphertext, vector<uint8_t>& plaintext,
         // Расшифровываем блок
         decryptBlock(message, c1, c2, p, x);
         
-        // Преобразуем обратно в байты
-        vector<uint8_t> blockBytes(blockSize);
+        // Преобразуем обратно в байты с выравниванием вправо (сохраняем ведущие нули)
+        vector<uint8_t> blockBytes(blockSize, 0); // Инициализируем нулями
         size_t count;
-        mpz_export(&blockBytes[0], &count, 1, sizeof(uint8_t), 0, 0, message);
+        vector<uint8_t> exportBuf(blockSize, 0);
+        mpz_export(&exportBuf[0], &count, 1, sizeof(uint8_t), 0, 0, message);
         
-        // Дополняем нулями если нужно
-        for(size_t j = count; j < blockSize; j++)
+        // Копируем в конец блока, ведущие нули остаются в начале
+        for(size_t j = 0; j < count; j++)
         {
-            blockBytes[j] = 0;
+            blockBytes[blockSize - count + j] = exportBuf[j];
         }
         
         // Записываем расшифрованный блок

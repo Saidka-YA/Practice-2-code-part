@@ -16,7 +16,7 @@ bool readFile(const std::string& path, std::vector<uint8_t>& data);
 bool writeFile(const std::string& path, const std::vector<uint8_t>& data);
 std::string hexDisplay(const std::vector<uint8_t>& data);
 void generateKeys(mpz_t p, mpz_t g, mpz_t y, mpz_t x);
-bool saveKey(const string& path, const mpz_t p, const mpz_t g, const mpz_t y, const mpz_t x);
-bool loadKey(const string& path, mpz_t p, mpz_t g, mpz_t y, mpz_t x);
+bool saveKey(const std::string& path, const mpz_t p, const mpz_t g, const mpz_t y, const mpz_t x);
+bool loadKey(const std::string& path, mpz_t p, mpz_t g, mpz_t y, mpz_t x);
 
 #endif

@@ -42,9 +42,23 @@ int main()
             mpz_clear(x);
             return 1;
         }
+        cout << "Файл прочитан. Размер: " << data.size() << " байт\n";
+
         // Генерируем ключи и сохраняем их в файл
         cout << "Генерация ключей...\n";
         generateKeys(p, g, y, x);
+
+        // Вывод сгенерированных ключей
+        char* pStr = mpz_get_str(NULL, 16, p);
+        char* gStr = mpz_get_str(NULL, 16, g);
+        char* yStr = mpz_get_str(NULL, 16, y);
+        char* xStr = mpz_get_str(NULL, 16, x);
+        cout << "  p (hex): " << pStr << "\n";
+        cout << "  g (hex): " << gStr << "\n";
+        cout << "  y (hex): " << yStr << "\n";
+        cout << "  x (hex): " << xStr << "\n";
+        free(pStr); free(gStr); free(yStr); free(xStr);
+
         if (!saveKey(keyPath, p, g, y, x))
         {
             cerr << "Ошибка сохранения ключа\n";
@@ -54,12 +68,17 @@ int main()
             mpz_clear(x);
             return 1;
         }
+        cout << "Ключи сохранены в " << keyPath << "\n";
+
         // Добавляем байты в конец данных чтобы были кратны 64 байтам
         Padding(data);
+        cout << "Padding применён. Размер после padding: " << data.size() << " байт\n";
+
         // Шифруем данные и записываем в ciphertext
         cout << "Шифрование...\n";
         vector<uint8_t> ciphertext;
         encryptData(data, ciphertext, p, g, y);
+        cout << "Шифрование завершено. Размер шифртекста: " << ciphertext.size() << " байт\n";
 
         if (!writeFile(outputPath, ciphertext))
         {
@@ -93,6 +112,18 @@ int main()
             return 1;
         }
 
+        // Вывод загруженных ключей
+        char* pStr = mpz_get_str(NULL, 16, p);
+        char* gStr = mpz_get_str(NULL, 16, g);
+        char* yStr = mpz_get_str(NULL, 16, y);
+        char* xStr = mpz_get_str(NULL, 16, x);
+        cout << "Ключи загружены из " << keyPath << "\n";
+        cout << "  p (hex): " << pStr << "\n";
+        cout << "  g (hex): " << gStr << "\n";
+        cout << "  y (hex): " << yStr << "\n";
+        cout << "  x (hex): " << xStr << "\n";
+        free(pStr); free(gStr); free(yStr); free(xStr);
+
         vector<uint8_t> ciphertext;
         if (!readFile(inputPath, ciphertext))
         {
@@ -103,11 +134,13 @@ int main()
             mpz_clear(x);
             return 1;
         }
+        cout << "Файл прочитан. Размер шифртекста: " << ciphertext.size() << " байт\n";
 
         cout << "Расшифрование...\n";
         vector<uint8_t> plaintext;
         decryptData(ciphertext, plaintext, p, x);
         deletePadding(plaintext);
+        cout << "Расшифрование завершено. Размер открытого текста: " << plaintext.size() << " байт\n";
 
         if (!writeFile(outputPath, plaintext))
         {
@@ -132,18 +165,34 @@ int main()
 
         // Текст -> байты
         vector<uint8_t> data(text.begin(), text.end());
+        cout << "Размер входных данных: " << data.size() << " байт\n";
 
         // Генерируем ключи, сохраняем
         cout << "Генерация ключей...\n";
         generateKeys(p, g, y, x);
+
+        // Вывод сгенерированных ключей
+        char* pStr = mpz_get_str(NULL, 16, p);
+        char* gStr = mpz_get_str(NULL, 16, g);
+        char* yStr = mpz_get_str(NULL, 16, y);
+        char* xStr = mpz_get_str(NULL, 16, x);
+        cout << "  p (hex): " << pStr << "\n";
+        cout << "  g (hex): " << gStr << "\n";
+        cout << "  y (hex): " << yStr << "\n";
+        cout << "  x (hex): " << xStr << "\n";
+        free(pStr); free(gStr); free(yStr); free(xStr);
+
         saveKey(keyPath, p, g, y, x);
+        cout << "Ключи сохранены в " << keyPath << "\n";
 
         Padding(data);
+        cout << "Padding применён. Размер после padding: " << data.size() << " байт\n";
 
         // Шифруем
         cout << "Шифрование...\n";
         vector<uint8_t> ciphertext;
         encryptData(data, ciphertext, p, g, y);
+        cout << "Шифрование завершено. Размер шифртекста: " << ciphertext.size() << " байт\n";
 
         cout << "\nЗашифрованный текст (hex):\n";
         cout << hexDisplay(ciphertext) << endl;
@@ -153,6 +202,7 @@ int main()
         vector<uint8_t> plaintext;
         decryptData(ciphertext, plaintext, p, x);
         deletePadding(plaintext);
+        cout << "Расшифрование завершено. Размер открытого текста: " << plaintext.size() << " байт\n";
 
         string decrypted(plaintext.begin(), plaintext.end());
         cout << "\nРасшифрованный текст:\n";
