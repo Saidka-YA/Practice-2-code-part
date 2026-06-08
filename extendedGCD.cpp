@@ -27,7 +27,7 @@ void gcdExtended(int a, int b, int& x, int& y, int& d)
         
         cout << "|" << setw(7) << Q << "|" << setw(7) << t2 << "|" << setw(7) << t3  
              << "|" << setw(7) << x1 << "|" << setw(7) << y1 << "|" << endl;
-
+        // Обновление переменных
         x1 = y1;
         x2 = y2;
         x3 = y3;
@@ -35,7 +35,9 @@ void gcdExtended(int a, int b, int& x, int& y, int& d)
         y2 = t2;
         y3 = t3;
     }
+    // Сохранение коэффициентов Безу и НОД
     x = x2;
     y = x3;
+    d = x1;
     cout << "НОД(" << a << "," << b << "): " << x1 << endl;
 }
