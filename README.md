@@ -37,8 +37,8 @@ libgmpxx4ldbl
 ### 1. Клонирование репозитория
 
 ```bash
-git clone https://github.com/username/LRxPRx.git
-cd LRxPRx
+git clone [https://github.com/username/LRxPRx.git](https://github.com/Saidka-YA/Practice-2-code-part.git)
+cd Practice-2-code-part.git)
 ```
 
 ### 2. Установка зависимостей
