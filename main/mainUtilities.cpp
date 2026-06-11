@@ -1,7 +1,6 @@
 #include "mainUtilities.h"
 #include "funcktions.h"
 #include "extendedGCD.h"
-#include "funck.h"
 #include "ElGamalblock.h"
 #include "ElGamalUtilities.h"
 #include "mitmUtilities.h"
@@ -51,6 +50,34 @@ uint readUint(const string& prompt)
     return value;
 }
 
+// чтение строки пути к файлу с проверкой на пустоту
+static string readPath(const string& prompt)
+{
+    string path;
+    while (true)
+    {
+        cout << prompt;
+        getline(cin, path);
+        if (!path.empty()) break;
+        cerr << "Ошибка: путь не может быть пустым!\n";
+    }
+    return path;
+}
+
+// чтение строки сообщения с проверкой на пустоту
+static string readMessage(const string& prompt)
+{
+    string msg;
+    while (true)
+    {
+        cout << prompt;
+        getline(cin, msg);
+        if (!msg.empty()) break;
+        cerr << "Ошибка: сообщение не может быть пустым!\n";
+    }
+    return msg;
+}
+
 // Главное меню
 void printMenu()
 {
@@ -62,7 +89,6 @@ void printMenu()
     cout << "  3 - Расширенный алгоритм Евклида (c^-1 mod m = d)\n";
     cout << "  4 - Шифрование Эль-Гамаля\n";
     cout << "  5 - Атака MITM на шифр Эль-Гамаля\n";
-    cout << "  6 - Цепные дроби и диофантово уравнение\n";
     cout << "  0 - Выход\n";
     cout << "==========================================\n";
     cout << "Выбор: ";
@@ -175,7 +201,7 @@ void runInverseViaCandD()
 
     if (d != 1)
     {
-        cout << "Обратный элемент не существует, так как НОД(" 
+        cout << "Обратный элемент не существует, так как НОД("
              << c << ", " << m << ") != 1\n";
     }
     else
@@ -210,54 +236,57 @@ void runElGamalCipher()
     cout << "1 - Зашифровать файл\n";
     cout << "2 - Расшифровать файл\n";
     cout << "3 - Зашифровать текст (консоль)\n";
-    cout << "Выбор: ";
 
     int cipherChoice;
-    cin >> cipherChoice;
+    while (true)
+    {
+        cout << "Выбор: ";
+        if (cin >> cipherChoice && cipherChoice >= 1 && cipherChoice <= 3) break;
+        cerr << "Ошибка: введите 1, 2 или 3!\n";
+        cin.clear();
+        cin.ignore(1000, '\n');
+    }
     cin.ignore();
 
     string keyPath = "elgamalKey.bin";
 
-    mpz_t p, g, y, x;
-    mpz_init(p);
-    mpz_init(g);
-    mpz_init(y);
-    mpz_init(x);
+    mpz_t modP, baseG, openY, secX;
+    mpz_init(modP);
+    mpz_init(baseG);
+    mpz_init(openY);
+    mpz_init(secX);
 
     if (cipherChoice == 1)
     {
-        string inputPath, outputPath;
-        cout << "Введите путь к файлу: ";
-        getline(cin, inputPath);
-        cout << "Введите путь для сохранения результата: ";
-        getline(cin, outputPath);
+        string inputPath = readPath("Введите путь к файлу: ");
+        string outputPath = readPath("Введите путь для сохранения результата: ");
 
         vector<uint8_t> data;
         if (!readFile(inputPath, data))
         {
             cerr << "Ошибка чтения файла\n";
-            mpz_clear(p); mpz_clear(g); mpz_clear(y); mpz_clear(x);
+            mpz_clear(modP); mpz_clear(baseG); mpz_clear(openY); mpz_clear(secX);
             return;
         }
         cout << "Файл прочитан. Размер: " << data.size() << " байт\n";
 
         cout << "Генерация ключей...\n";
-        generateKeys(p, g, y, x);
+        generateKeys(modP, baseG, openY, secX);
 
-        char* pStr = mpz_get_str(NULL, 16, p);
-        char* gStr = mpz_get_str(NULL, 16, g);
-        char* yStr = mpz_get_str(NULL, 16, y);
-        char* xStr = mpz_get_str(NULL, 16, x);
-        cout << "  p (hex): " << pStr << "\n";
-        cout << "  g (hex): " << gStr << "\n";
-        cout << "  y (hex): " << yStr << "\n";
-        cout << "  x (hex): " << xStr << "\n";
+        char* pStr = mpz_get_str(NULL, 16, modP);
+        char* gStr = mpz_get_str(NULL, 16, baseG);
+        char* yStr = mpz_get_str(NULL, 16, openY);
+        char* xStr = mpz_get_str(NULL, 16, secX);
+        cout << "  modP  (hex): " << pStr << "\n";
+        cout << "  baseG (hex): " << gStr << "\n";
+        cout << "  openY (hex): " << yStr << "\n";
+        cout << "  secX  (hex): " << xStr << "\n";
         free(pStr); free(gStr); free(yStr); free(xStr);
 
-        if (!saveKey(keyPath, p, g, y, x))
+        if (!saveKey(keyPath, modP, baseG, openY, secX))
         {
             cerr << "Ошибка сохранения ключа\n";
-            mpz_clear(p); mpz_clear(g); mpz_clear(y); mpz_clear(x);
+            mpz_clear(modP); mpz_clear(baseG); mpz_clear(openY); mpz_clear(secX);
             return;
         }
         cout << "Ключи сохранены в " << keyPath << "\n";
@@ -266,11 +295,11 @@ void runElGamalCipher()
         cout << "Padding применён. Размер после padding: " << data.size() << " байт\n";
 
         cout << "Шифрование...\n";
-        vector<uint8_t> ciphertext;
-        encryptData(data, ciphertext, p, g, y);
-        cout << "Шифрование завершено. Размер шифртекста: " << ciphertext.size() << " байт\n";
+        vector<uint8_t> ciphr;
+        encryptData(data, ciphr, modP, baseG, openY);
+        cout << "Шифрование завершено. Размер шифртекста: " << ciphr.size() << " байт\n";
 
-        if (!writeFile(outputPath, ciphertext))
+        if (!writeFile(outputPath, ciphr))
         {
             cerr << "Ошибка записи файла\n";
         }
@@ -281,47 +310,44 @@ void runElGamalCipher()
     }
     else if (cipherChoice == 2)
     {
-        string inputPath, outputPath;
-        cout << "Введите путь к файлу: ";
-        getline(cin, inputPath);
-        cout << "Введите путь для сохранения результата: ";
-        getline(cin, outputPath);
+        string inputPath = readPath("Введите путь к файлу: ");
+        string outputPath = readPath("Введите путь для сохранения результата: ");
 
-        if (!loadKey(keyPath, p, g, y, x))
+        if (!loadKey(keyPath, modP, baseG, openY, secX))
         {
             cerr << "Ошибка загрузки ключа\n";
-            mpz_clear(p); mpz_clear(g); mpz_clear(y); mpz_clear(x);
+            mpz_clear(modP); mpz_clear(baseG); mpz_clear(openY); mpz_clear(secX);
             return;
         }
 
-        char* pStr = mpz_get_str(NULL, 16, p);
-        char* gStr = mpz_get_str(NULL, 16, g);
-        char* yStr = mpz_get_str(NULL, 16, y);
-        char* xStr = mpz_get_str(NULL, 16, x);
+        char* pStr = mpz_get_str(NULL, 16, modP);
+        char* gStr = mpz_get_str(NULL, 16, baseG);
+        char* yStr = mpz_get_str(NULL, 16, openY);
+        char* xStr = mpz_get_str(NULL, 16, secX);
         cout << "Ключи загружены из " << keyPath << "\n";
-        cout << "  p (hex): " << pStr << "\n";
-        cout << "  g (hex): " << gStr << "\n";
-        cout << "  y (hex): " << yStr << "\n";
-        cout << "  x (hex): " << xStr << "\n";
+        cout << "  modP  (hex): " << pStr << "\n";
+        cout << "  baseG (hex): " << gStr << "\n";
+        cout << "  openY (hex): " << yStr << "\n";
+        cout << "  secX  (hex): " << xStr << "\n";
         free(pStr); free(gStr); free(yStr); free(xStr);
 
-        vector<uint8_t> ciphertext;
-        if (!readFile(inputPath, ciphertext))
+        vector<uint8_t> ciphr;
+        if (!readFile(inputPath, ciphr))
         {
             cerr << "Ошибка чтения файла\n";
-            mpz_clear(p); mpz_clear(g); mpz_clear(y); mpz_clear(x);
+            mpz_clear(modP); mpz_clear(baseG); mpz_clear(openY); mpz_clear(secX);
             return;
         }
-        cout << "Файл прочитан. Размер шифртекста: " << ciphertext.size() << " байт\n";
+        cout << "Файл прочитан. Размер шифртекста: " << ciphr.size() << " байт\n";
 
         cout << "Расшифрование...\n";
-        vector<uint8_t> plaintext;
-        decryptData(ciphertext, plaintext, p, x);
-        deletePadding(plaintext);
-        cout << "Расшифрование завершено. Размер открытого текста: " 
-             << plaintext.size() << " байт\n";
+        vector<uint8_t> plain;
+        decryptData(ciphr, plain, modP, secX);
+        deletePadding(plain);
+        cout << "Расшифрование завершено. Размер открытого текста: "
+             << plain.size() << " байт\n";
 
-        if (!writeFile(outputPath, plaintext))
+        if (!writeFile(outputPath, plain))
         {
             cerr << "Ошибка записи файла\n";
         }
@@ -335,56 +361,51 @@ void runElGamalCipher()
         cout << "Ввод текста с переносами строк будет обработан неверно!\n";
         cout << "Для расшифрования/дешифрования большого текста "
              << "используйте режим расшифрования файлов\n";
-        cout << "Введите текст для шифрования: ";
-        string text;
-        getline(cin, text);
+
+        string text = readMessage("Введите текст для шифрования: ");
 
         vector<uint8_t> data(text.begin(), text.end());
         cout << "Размер входных данных: " << data.size() << " байт\n";
 
         cout << "Генерация ключей...\n";
-        generateKeys(p, g, y, x);
+        generateKeys(modP, baseG, openY, secX);
 
-        char* pStr = mpz_get_str(NULL, 16, p);
-        char* gStr = mpz_get_str(NULL, 16, g);
-        char* yStr = mpz_get_str(NULL, 16, y);
-        char* xStr = mpz_get_str(NULL, 16, x);
-        cout << "  p (hex): " << pStr << "\n";
-        cout << "  g (hex): " << gStr << "\n";
-        cout << "  y (hex): " << yStr << "\n";
-        cout << "  x (hex): " << xStr << "\n";
+        char* pStr = mpz_get_str(NULL, 16, modP);
+        char* gStr = mpz_get_str(NULL, 16, baseG);
+        char* yStr = mpz_get_str(NULL, 16, openY);
+        char* xStr = mpz_get_str(NULL, 16, secX);
+        cout << "  modP  (hex): " << pStr << "\n";
+        cout << "  baseG (hex): " << gStr << "\n";
+        cout << "  openY (hex): " << yStr << "\n";
+        cout << "  secX  (hex): " << xStr << "\n";
         free(pStr); free(gStr); free(yStr); free(xStr);
 
-        saveKey(keyPath, p, g, y, x);
+        saveKey(keyPath, modP, baseG, openY, secX);
         cout << "Ключи сохранены в " << keyPath << "\n";
 
         Padding(data);
         cout << "Padding применён. Размер после padding: " << data.size() << " байт\n";
 
         cout << "Шифрование...\n";
-        vector<uint8_t> ciphertext;
-        encryptData(data, ciphertext, p, g, y);
-        cout << "Шифрование завершено. Размер шифртекста: " << ciphertext.size() << " байт\n";
+        vector<uint8_t> ciphr;
+        encryptData(data, ciphr, modP, baseG, openY);
+        cout << "Шифрование завершено. Размер шифртекста: " << ciphr.size() << " байт\n";
 
         cout << "\nЗашифрованный текст (hex):\n";
-        cout << hexDisplay(ciphertext) << "\n";
+        cout << hexDisplay(ciphr) << "\n";
 
         cout << "\nРасшифрование...\n";
-        vector<uint8_t> plaintext;
-        decryptData(ciphertext, plaintext, p, x);
-        deletePadding(plaintext);
+        vector<uint8_t> plain;
+        decryptData(ciphr, plain, modP, secX);
+        deletePadding(plain);
         cout << "Расшифрование завершено. Размер открытого текста: "
-             << plaintext.size() << " байт\n";
+             << plain.size() << " байт\n";
 
-        string decrypted(plaintext.begin(), plaintext.end());
+        string decrypted(plain.begin(), plain.end());
         cout << "\nРасшифрованный текст:\n" << decrypted << "\n";
     }
-    else
-    {
-        cerr << "Неверный выбор\n";
-    }
 
-    mpz_clear(p); mpz_clear(g); mpz_clear(y); mpz_clear(x);
+    mpz_clear(modP); mpz_clear(baseG); mpz_clear(openY); mpz_clear(secX);
 }
 
 // Задание 5: Эмуляция атаки "Человек посередине" на шифр Эль-Гамаля
@@ -395,31 +416,34 @@ void runMitmAttack()
     cout << "  Боб хочет отправить зашифрованное сообщение Алисе.\n";
     cout << "  Ева находится между ними и перехватывает все пакеты.\n\n";
 
-    mpz_t aliceP, aliceG, aliceY, aliceX;
-    mpz_init(aliceP); mpz_init(aliceG);
-    mpz_init(aliceY); mpz_init(aliceX);
+    cout << "Нажмите Enter для запуска демонстрации атаки...\n";
+    cin.ignore(1000, '\n');
+
+    mpz_t alceP, alceG, alceY, alceX;
+    mpz_init(alceP); mpz_init(alceG);
+    mpz_init(alceY); mpz_init(alceX);
 
     mpz_t eveY, eveX;
     mpz_init(eveY); mpz_init(eveX);
 
     cout << "ШАГ 1: Алиса публикует открытый ключ\n";
-    mitmAliceGenerateKeys(aliceP, aliceG, aliceY, aliceX);
+    mitmAliceGenerateKeys(alceP, alceG, alceY, alceX);
 
     cout << "\nШАГ 2: Атака — Ева подменяет открытый ключ\n";
-    mitmEveSubstituteKey(aliceP, aliceG, eveY, eveX);
+    mitmEveSubstituteKey(alceP, alceG, eveY, eveX);
 
     cout << "\nШАГ 3: Боб отправляет зашифрованное сообщение\n";
-    string originalMessage = "Привет, Алиса! Встретимся в 18:00.";
-    vector<uint8_t> bobCiphertext;
-    mitmBobEncryptMessage(originalMessage, bobCiphertext, aliceP, aliceG, eveY);
+    string origMsg = "Привет, Алиса! Встретимся в 18:00.";
+    vector<uint8_t> bobCiphr;
+    mitmBobEncryptMessage(origMsg, bobCiphr, alceP, alceG, eveY);
 
     cout << "\nШАГ 4: Ева перехватывает и модифицирует сообщение\n";
-    vector<uint8_t> forwardedCiphertext;
-    mitmEveInterceptAndReencrypt(bobCiphertext, forwardedCiphertext,
-                                  aliceP, aliceG, eveX, aliceY);
+    vector<uint8_t> fwdCiphr;
+    mitmEveInterceptAndReencrypt(bobCiphr, fwdCiphr,
+                                  alceP, alceG, eveX, alceY);
 
     cout << "\nШАГ 5: Алиса расшифровывает полученное сообщение\n";
-    mitmAliceDecryptMessage(forwardedCiphertext, aliceP, aliceX);
+    mitmAliceDecryptMessage(fwdCiphr, alceP, alceX);
 
     cout << "\n                        ИТОГ АТАКИ\n";
     cout << "  Боб думал, что шифрует ключом Алисы — шифровал ключом Евы   \n";
@@ -427,52 +451,7 @@ void runMitmAttack()
     cout << "  Алиса получила изменённое сообщение и ничего не заметила    \n";
     cout << "  Защита: использование сертификатов / цифровых подписей      \n";
 
-    mpz_clear(aliceP); mpz_clear(aliceG);
-    mpz_clear(aliceY); mpz_clear(aliceX);
+    mpz_clear(alceP); mpz_clear(alceG);
+    mpz_clear(alceY); mpz_clear(alceX);
     mpz_clear(eveY);   mpz_clear(eveX);
-}
-
-// Задание 6: Цепные дроби и решение уравнения 1256a + 847b = 119
-void runContinuedFraction()
-{
-    cout << "\n--- Задание 6: Цепные дроби и диофантово уравнение ---\n\n";
-
-    int A = 1256;
-    int B = 847;
-    int D = 119;
-
-    // Цепная дробь
-    Fraction(A, B);
-
-    int x, y, gcd;
-
-    // Расширенный алгоритм Евклида
-    gcdExtended(A, B, x, y, gcd);
-
-    cout << "\nНОД = " << gcd << "\n";
-
-    // Проверка существования решения
-    if (D % gcd != 0)
-    {
-        cout << "Решений нет.\n";
-        return;
-    }
-
-    // Масштабируем решение
-    int k = D / gcd;
-
-    int a0 = x * k;
-    int b0 = y * k;
-
-    cout << "\nЧастное решение уравнения:\n";
-    cout << "a = " << a0 << "\n";
-    cout << "b = " << b0 << "\n";
-
-    cout << "\nПроверка:\n";
-    cout << A << " * (" << a0 << ") + " << B << " * (" << b0 << ") = "
-         << A * a0 + B * b0 << "\n";
-
-    cout << "\nОбщее решение:\n";
-    cout << "a = " << a0 << " + " << B / gcd << " * t\n";
-    cout << "b = " << b0 << " - " << A / gcd << " * t\n";
 }

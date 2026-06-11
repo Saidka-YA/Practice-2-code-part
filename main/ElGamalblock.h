@@ -5,13 +5,13 @@
 #include <random>
 #include <gmp.h>
 
-void encryptBlock(const uint8_t* input, int blockSize, mpz_t c1, mpz_t c2, 
-                  const mpz_t p, const mpz_t g, const mpz_t y);
-void decryptBlock(mpz_t message, const mpz_t c1, const mpz_t c2, 
-                  const mpz_t p, const mpz_t x);
-void encryptData(const std::vector<uint8_t>& plaintext, std::vector<uint8_t>& ciphertext, 
-                 const mpz_t p, const mpz_t g, const mpz_t y);
-void decryptData(const std::vector<uint8_t>& ciphertext, std::vector<uint8_t>& plaintext, 
-                 const mpz_t p, const mpz_t x);
-  
+void encryptBlock(const uint8_t* inBuf, int blkSz, mpz_t ciph1, mpz_t ciph2,
+                  const mpz_t modP, const mpz_t baseG, const mpz_t openY);
+void decryptBlock(mpz_t msgOut, const mpz_t ciph1, const mpz_t ciph2,
+                  const mpz_t modP, const mpz_t secX);
+void encryptData(const std::vector<uint8_t>& plain, std::vector<uint8_t>& ciphr,
+                 const mpz_t modP, const mpz_t baseG, const mpz_t openY);
+void decryptData(const std::vector<uint8_t>& ciphr, std::vector<uint8_t>& plain,
+                 const mpz_t modP, const mpz_t secX);
+
 #endif

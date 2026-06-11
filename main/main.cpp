@@ -42,18 +42,13 @@ int main()
                 runMitmAttack();
                 break;
 
-            case MenuOption::ContinuedFraction:
-                runContinuedFraction();
-                break;
-
             case MenuOption::Exit:
                 cout << "\nВыход из программы.\n";
                 return 0;
 
             default:
-                cerr << "Неверный выбор. Введите число от 0 до 6.\n";
+                cerr << "Неверный выбор. Введите число от 0 до 5.\n";
                 break;
-
         }
     }
     return 0;

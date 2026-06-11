@@ -15,7 +15,6 @@ enum class MenuOption
     InverseCmod           = 3,  // Задание 3: c^-1 mod m = d
     ElGamalCipher         = 4,  // Задание 4: Шифр Эль-Гамаля
     MitmAttack            = 5,  // Задание 5: Атака "Человек посередине"
-    ContinuedFraction     = 6,  // Задание 6: Цепные дроби и уравнение
     Exit                  = 0   // Выход
 };
 
@@ -28,6 +27,5 @@ void runInverseViaCandD();
 void runInverseCmod();
 void runElGamalCipher();
 void runMitmAttack();
-void runContinuedFraction();
 
 #endif
